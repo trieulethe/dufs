@@ -249,9 +249,9 @@ body {
 }
 
 /* dark theme */
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: white) {
   body {
-    background-color: #000;
+    background-color: #000000;
   }
 
   html,

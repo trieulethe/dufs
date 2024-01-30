@@ -1,0 +1,7 @@
+bind:
+  - 0.0.0.0
+hidden:
+  - dir3
+  - test.txt
+allow-all: true
+assets: "/home/suntu/dufs/assets"
