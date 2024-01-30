@@ -20,7 +20,7 @@ Description=Upload System
 User=$USERNAME
 Group=$USERNAME
 WorkingDirectory=$APP_DIRECTORY
-ExecStart=$APP_DIRECTORY/$EXECUTABLE
+ExecStart=$APP_DIRECTORY/$EXECUTABLE  /root/video/ --alow-all
 Restart=on-failure
 RestartSec=5s
 [Install]
