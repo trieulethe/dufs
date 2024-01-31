@@ -1,14 +1,9 @@
 [package]
-name = "dufs"
-version = "0.39.0"
+name = "upload"
+version = "0.3.0"
 edition = "2021"
-authors = ["sigoden <sigoden@gmail.com>"]
 description = "Dufs is a distinctive utility file server"
 license = "MIT OR Apache-2.0"
-homepage = "https://github.com/sigoden/dufs"
-repository = "https://github.com/sigoden/dufs"
-categories = ["command-line-utilities", "web-programming::http-server"]
-keywords = ["static", "file", "server", "webdav", "cli"]
 
 [dependencies]
 clap = { version = "4", features = ["wrap_help", "env"] }
@@ -53,9 +48,6 @@ http-body-util = "0.1"
 bytes = "1.5"
 pin-project-lite = "0.2"
 
-[features]
-default = ["tls"]
-tls = ["rustls-pemfile", "tokio-rustls"]
 
 [dev-dependencies]
 assert_cmd = "2"
@@ -68,9 +60,3 @@ url = "2"
 diqwest = { version = "2.0", features = ["blocking"], default-features = false }
 predicates = "3"
 
-[profile.release]
-opt-level = 3
-lto = true
-codegen-units = 1
-panic = "abort"
-strip = "symbols"
