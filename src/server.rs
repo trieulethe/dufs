@@ -487,6 +487,31 @@ impl Server {
             ret?;
         }
 
+        println!("upload success: {:?}", path);
+
+        // Build the FFmpeg command
+        let mut ffmpeg_command = std::process::Command::new("ffmpeg");
+        // Get the parent directory of the path
+        let parent = path.parent().unwrap_or(Path::new(""));
+        let file_stem = path.file_stem().unwrap_or_default();
+        let new_path = parent.join(file_stem).with_extension("m3u8");
+        println!("new_path: {:?}", new_path);
+
+        // Add arguments to the FFmpeg command
+        // ffmpeg_command.arg("-i").arg(path);
+        // ffmpeg_command.arg("-codec:").arg("copy");
+        // ffmpeg_command.arg("-start_number").arg("0");
+        // ffmpeg_command.arg("-hls_time").arg("10");
+        // ffmpeg_command.arg("-hls_list_size").arg("0");
+        // ffmpeg_command.arg("-f").arg("hls");
+        // ffmpeg_command.arg(new_path);
+        // // Execute the FFmpeg command
+        // let output = ffmpeg_command.output().expect("Failed to execute FFmpeg");
+        // println!(
+        //     "FFmpeg Output: {:?}",
+        //     String::from_utf8_lossy(&output.stdout)
+        // );
+
         *res.status_mut() = status;
 
         Ok(())
