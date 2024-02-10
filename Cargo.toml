@@ -2,6 +2,7 @@
 name = "upload"
 version = "0.3.0"
 description = "Dufs is a distinctive utility file server"
+edition = "2021"
 
 [dependencies]
 clap = { version = "4", features = ["wrap_help", "env"] }
@@ -45,6 +46,10 @@ hyper-util = { version = "0.1", features = ["server-auto", "tokio"] }
 http-body-util = "0.1"
 bytes = "1.5"
 pin-project-lite = "0.2"
+
+[features]
+default = ["tls"]
+tls = ["rustls-pemfile", "tokio-rustls"]
 
 
 [dev-dependencies]

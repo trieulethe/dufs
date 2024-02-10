@@ -3,8 +3,7 @@
 use crate::auth::{www_authenticate, AccessPaths, AccessPerm};
 use crate::http_utils::{body_full, IncomingStream, LengthLimitedStream};
 use crate::utils::{
-    decode_uri, encode_uri, get_file_mtime_and_mode, get_file_name, glob, parse_range,
-    try_get_file_name,
+    create_html_file, decode_uri, encode_uri, gen_hls_link, gen_html_hls, get_file_mtime_and_mode, get_file_name, glob, parse_range, try_get_file_name
 };
 use crate::Args;
 
@@ -33,12 +32,14 @@ use std::borrow::Cow;
 use std::cmp::Ordering;
 use std::collections::HashMap;
 use std::fs::Metadata;
+use std::hash::Hash;
 use std::io::SeekFrom;
 use std::net::SocketAddr;
+use std::ops::Div;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{self, AtomicBool};
 use std::sync::Arc;
-use std::time::SystemTime;
+use std::time::{SystemTime, UNIX_EPOCH};
 use tokio::fs::File;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWrite};
 use tokio::{fs, io};
@@ -455,6 +456,9 @@ impl Server {
         req: Request,
         res: &mut Response,
     ) -> Result<()> {
+        let new_dir = self.create_dir(path).await?;
+        let relative_path = new_dir.join(path.file_name().unwrap_or_default());
+        let path = relative_path.as_path();
         ensure_path_parent(path).await?;
         let (mut file, status) = match upload_offset {
             None => (fs::File::create(path).await?, StatusCode::CREATED),
@@ -489,28 +493,39 @@ impl Server {
 
         println!("upload success: {:?}", path);
 
-        // Build the FFmpeg command
-        let mut ffmpeg_command = std::process::Command::new("ffmpeg");
-        // Get the parent directory of the path
-        let parent = path.parent().unwrap_or(Path::new(""));
-        let file_stem = path.file_stem().unwrap_or_default();
-        let new_path = parent.join(file_stem).with_extension("m3u8");
-        println!("new_path: {:?}", new_path);
+        if path.extension().unwrap_or_default() == "mp4" {
+            let parent = path.parent().unwrap_or(Path::new(""));
+            let file_stem = path.file_stem().unwrap_or_default();
+            let hls_path = parent.join(file_stem).with_extension("m3u8");
+            println!("hls_path: {:?}", hls_path);
+            let hls_path_clone = hls_path.clone();
 
-        // Add arguments to the FFmpeg command
-        // ffmpeg_command.arg("-i").arg(path);
-        // ffmpeg_command.arg("-codec:").arg("copy");
-        // ffmpeg_command.arg("-start_number").arg("0");
-        // ffmpeg_command.arg("-hls_time").arg("10");
-        // ffmpeg_command.arg("-hls_list_size").arg("0");
-        // ffmpeg_command.arg("-f").arg("hls");
-        // ffmpeg_command.arg(new_path);
-        // // Execute the FFmpeg command
-        // let output = ffmpeg_command.output().expect("Failed to execute FFmpeg");
-        // println!(
-        //     "FFmpeg Output: {:?}",
-        //     String::from_utf8_lossy(&output.stdout)
-        // );
+            let mut ffmpeg_gen_hls = std::process::Command::new("ffmpeg");
+            ffmpeg_gen_hls.arg("-i").arg(path);
+            ffmpeg_gen_hls.arg("-codec:").arg("copy");
+            ffmpeg_gen_hls.arg("-start_number").arg("0");
+            ffmpeg_gen_hls.arg("-hls_time").arg("10");
+            ffmpeg_gen_hls.arg("-hls_list_size").arg("0");
+            ffmpeg_gen_hls.arg("-f").arg("hls");
+            ffmpeg_gen_hls.arg(hls_path);
+            ffmpeg_gen_hls.output().expect("Failed to execute ffmpeg_gen_hls");
+
+            let thumb_path = parent.join("thumb1.png");
+            println!("thumb_path: {:?}", thumb_path);
+            let mut ffmpeg_gen_thumb = std::process::Command::new("ffmpeg");
+            ffmpeg_gen_thumb.arg("-i").arg(path);
+            ffmpeg_gen_thumb.arg("-vf").arg("thumbnail");
+            ffmpeg_gen_thumb.arg("-frames:v").arg("1");
+            ffmpeg_gen_thumb.arg(thumb_path);
+            ffmpeg_gen_thumb.output().expect("Failed to execute ffmpeg_gen_thumb");
+
+            let html_path = parent.join("index.html");
+            let hls_link = gen_hls_link(path.to_path_buf());
+            let html = gen_html_hls(hls_link.as_str());
+            create_html_file(html_path.to_str().unwrap(), html.as_str());
+
+            // println!("html: {:?}", html);
+        }
 
         *res.status_mut() = status;
 
@@ -985,6 +1000,20 @@ impl Server {
         fs::create_dir_all(path).await?;
         *res.status_mut() = StatusCode::CREATED;
         Ok(())
+    }
+
+    fn generate_folder_name(&self, video_path: &str) -> String {
+        let mut string = Uuid::new_v4().to_string().replace("-", "");
+        string.truncate(10);
+        return string;
+    }
+
+    async fn create_dir(&self, path: &Path) -> Result<PathBuf> {
+        let folder_name = self.generate_folder_name(path.to_str().unwrap());
+        let folder_path = self.args.serve_path.join(folder_name);
+        let folder_path_clone = folder_path.clone();
+        fs::create_dir_all(folder_path).await?;
+        Ok(folder_path_clone)
     }
 
     async fn handle_copy(&self, path: &Path, req: &Request, res: &mut Response) -> Result<()> {

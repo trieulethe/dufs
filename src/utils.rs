@@ -3,10 +3,73 @@ use chrono::{DateTime, Utc};
 #[cfg(feature = "tls")]
 use rustls_pki_types::{CertificateDer, PrivateKeyDer};
 use std::{
-    borrow::Cow,
-    path::Path,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    borrow::Cow, fs::File, path::{Path, PathBuf}, time::{Duration, SystemTime, UNIX_EPOCH}
 };
+use std::io::Write;
+
+fn get_dir_name_file_name(path: PathBuf) -> String {
+    // let path = Path::new(file_path);
+
+    let parent = path.parent().unwrap();
+    let dir_name = parent.file_name().unwrap();
+    let dir_name_str = dir_name.to_str().unwrap();
+
+    format!("{}/{}", dir_name_str, path.file_name().unwrap().to_str().unwrap())
+}
+
+pub fn gen_hls_link(hls_path: PathBuf) -> String {
+    let file_name = get_dir_name_file_name(hls_path);
+    format!("https://stream.toolack.com/hls/{}", file_name)
+}
+
+pub fn gen_html_hls(video_url: &str) -> String {
+    format!(
+        r#"
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Live Streaming</title>
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video-js.min.css" rel="stylesheet">
+        </head>
+        <body style="background:#000;color:#fff;font-family:"Oxygen",sans-serif;>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video.min.js"></script>
+            <div class="video-container">
+                <video 
+                    id="my-player" 
+                    class="video-js" 
+                    muted 
+                    controls 
+                    style="position:fixed;right:0;bottom:0;min-width:100%;min-height:100%;object-fit:fill;"
+                >
+                    <source src="{}" type="application/x-mpegURL">
+                    </source>
+                    <p class="vjs-no-js">
+                        To view this video please enable JavaScript, and consider upgrading to a
+                        web browser that
+                        <a href="https://videojs.com/html5-video-support/" target="_blank">
+                            supports HTML5 video
+                        </a>
+                    </p>
+                </video>
+            </div>
+        </body>
+        </html>
+    "#,
+        video_url
+    )
+}
+
+pub fn create_html_file(file_path: &str, html_content: &str) {
+    // Mở tệp tin để ghi
+    let mut file = File::create(file_path).expect("Không thể tạo tệp tin");
+
+    // Ghi nội dung HTML vào tệp tin
+    match file.write_all(html_content.as_bytes()) {
+        Ok(_) => println!("Tệp tin HTML đã được tạo và ghi thành công."),
+        Err(e) => eprintln!("Lỗi khi ghi tệp tin HTML: {}", e),
+    }
+}
 
 pub fn unix_now() -> Result<Duration> {
     SystemTime::now()
