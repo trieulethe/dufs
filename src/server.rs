@@ -520,7 +520,7 @@ impl Server {
             ffmpeg_gen_thumb.output().expect("Failed to execute ffmpeg_gen_thumb");
 
             let html_path = parent.join("index.html");
-            let hls_link = gen_hls_link(path.to_path_buf());
+            let hls_link = gen_hls_link(hls_path_clone.to_path_buf());
             let html = gen_html_hls(hls_link.as_str());
             create_html_file(html_path.to_str().unwrap(), html.as_str());
 

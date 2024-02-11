@@ -3,7 +3,7 @@
 # Variables
 APP_NAME="uploadsystem"
 APP_DIRECTORY=$(pwd)
-EXECUTABLE="target/release/dufs"
+EXECUTABLE="target/release/upload"
 USERNAME="root"
 
 # Change to the app directory
@@ -20,9 +20,7 @@ Description=Upload System
 User=$USERNAME
 Group=$USERNAME
 WorkingDirectory=$APP_DIRECTORY
-ExecStart=$APP_DIRECTORY/$EXECUTABLE  /root/video/ --allow-all
-Restart=on-failure
-RestartSec=5s
+ExecStart=$APP_DIRECTORY/$EXECUTABLE  /opt/media/ --allow-all
 [Install]
 WantedBy=multi-user.target
 EOF

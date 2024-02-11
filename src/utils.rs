@@ -8,8 +8,6 @@ use std::{
 use std::io::Write;
 
 fn get_dir_name_file_name(path: PathBuf) -> String {
-    // let path = Path::new(file_path);
-
     let parent = path.parent().unwrap();
     let dir_name = parent.file_name().unwrap();
     let dir_name_str = dir_name.to_str().unwrap();
@@ -32,7 +30,7 @@ pub fn gen_html_hls(video_url: &str) -> String {
             <title>Live Streaming</title>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video-js.min.css" rel="stylesheet">
         </head>
-        <body style="background:#000;color:#fff;font-family:"Oxygen",sans-serif;>
+        <body style="background:#000;color:#fff;">
             <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video.min.js"></script>
             <div class="video-container">
                 <video 
