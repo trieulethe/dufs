@@ -462,25 +462,51 @@ function addPath(file, index) {
     ${actionEdit}
   </td>`
 
-  $pathsTableBody.insertAdjacentHTML("beforeend", `
-<tr id="addPath${index}">
-  <td class="path cell-icon">
-    ${getPathSvg(file.path_type)}
-  </td>
-  <td class="path cell-name">
-    <a href="${url}" ${isDir ? "" : `target="_blank"`}>${encodedName}</a>
-  </td>
-  <td class="cell-mtime">${formatMtime(file.mtime)}</td>
-  <td class="cell-size">${formatSize(file.size).join(" ")}</td>
-  ${actionCell}
-  <td class="cell-iframe">
-    <a href="${url}?iframe" target="_blank">${ICONS.iframe}</a>
-    <p></p>
-  </td>
-</tr>`)
+  if (isDir) {
+    $pathsTableBody.insertAdjacentHTML(
+      "beforeend",
+      `
+      <tr id="addPath${index}">
+        <td class="path cell-icon">
+          ${getPathSvg(file.path_type)}
+        </td>
+        <td class="path cell-name">
+          <a href="${url}" ${isDir ? "" : `target="_blank"`}>${encodedName}</a>
+        </td>
+        <td class="cell-mtime">${formatMtime(file.mtime)}</td>
+        <td class="cell-size">${formatSize(file.size).join(" ")}</td>
+        ${actionCell}
+        <td class="cell-iframe">
+          <code id="htmlCode">&lt;iframe src="${url}index.html" height="500" width="800"/&gt;</code>
+        </td>
+      </tr>`
+    );
+  } else {
+        $pathsTableBody.insertAdjacentHTML(
+			"beforeend",
+			`
+      <tr id="addPath${index}">
+        <td class="path cell-icon">
+          ${getPathSvg(file.path_type)}
+        </td>
+        <td class="path cell-name">
+          <a href="${url}" ${isDir ? "" : `target="_blank"`}>${encodedName}</a>
+        </td>
+        <td class="cell-mtime">${formatMtime(file.mtime)}</td>
+        <td class="cell-size">${formatSize(file.size).join(" ")}</td>
+        ${actionCell}
+        <td class="cell-iframe"></td>
+      </tr>`
+		);
+  }
 }
 
-// function 
+function getIframe(isDir) {
+  if (isDir) {
+    return `<code id="htmlCode">&lt;iframe src="${url}index.html" height="500" width="800"/&gt;</code>`;
+  } 
+  return `<p>None</p>`
+}
 
 function setupDropzone() {
   ["drag", "dragstart", "dragend", "dragover", "dragenter", "dragleave", "drop"].forEach(name => {
