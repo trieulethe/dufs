@@ -523,7 +523,6 @@ impl Server {
             let hls_link = gen_hls_link(hls_path_clone.to_path_buf());
             let html = gen_html_hls(hls_link.as_str());
             create_html_file(html_path.to_str().unwrap(), html.as_str());
-
             // println!("html: {:?}", html);
         }
 

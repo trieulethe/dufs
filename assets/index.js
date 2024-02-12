@@ -473,9 +473,14 @@ function addPath(file, index) {
   <td class="cell-mtime">${formatMtime(file.mtime)}</td>
   <td class="cell-size">${formatSize(file.size).join(" ")}</td>
   ${actionCell}
-  <td class="cell-iframe"><a href="${url}?iframe" target="_blank">${ICONS.iframe}</a></td>
+  <td class="cell-iframe">
+    <a href="${url}?iframe" target="_blank">${ICONS.iframe}</a>
+    <p></p>
+  </td>
 </tr>`)
 }
+
+// function 
 
 function setupDropzone() {
   ["drag", "dragstart", "dragend", "dragover", "dragenter", "dragleave", "drop"].forEach(name => {

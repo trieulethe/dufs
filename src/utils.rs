@@ -34,12 +34,12 @@ pub fn gen_html_hls(video_url: &str) -> String {
             <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video.min.js"></script>
             <div class="video-container">
                 <video 
-                    id="my-player" 
-                    class="video-js" 
+                    id="my-player"
+                    class="video-js"
                     muted 
                     controls 
                     data-setup='{}'
-                    style="position:fixed;right:0;bottom:0;min-width:100%;min-height:100%;object-fit:fill;"
+                    style="position:fixed;right:0;bottom:0;min-width:100%;max-width:100%;min-height:100%;max-height:100%;object-fit:fill;"
                 >
                     <source src="{}" type="application/x-mpegURL">
                     </source>
