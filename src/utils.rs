@@ -41,7 +41,7 @@ pub fn gen_html_hls(video_url: &str) -> String {
                     data-setup='{}'
                     style="position:fixed;right:0;bottom:0;min-width:100%;max-width:100%;min-height:100%;max-height:100%;object-fit:fill;"
                 >
-                    <source src="{}" type="application/x-mpegURL">
+                    <source id="video-source" type="application/x-mpegURL"></source>
                     </source>
                     <p class="vjs-no-js">
                         To view this video please enable JavaScript, and consider upgrading to a
@@ -52,11 +52,27 @@ pub fn gen_html_hls(video_url: &str) -> String {
                     </p>
                 </video>
             </div>
+            <script>
+                var url = window.location.href;
+                console.log(url);
+                url = url.replace("/html", "/hls");
+                url = url.replace(".html", ".m3u8");  
+                console.log(url);
+                if (url){}
+                    document.getElementById('video-source').src = url;
+                {} else {}
+                    document.getElementById('video-source').src = 'https://stream.pornhubxx.com/26a2e6a35b/index.m3u8';
+                {}
+                const player = videojs('my-player');
+            </script>
         </body>
         </html>
     "#,
         "{}",
-        video_url
+        "{",
+        "}",
+        "{",
+        "}"
     )
 }
 

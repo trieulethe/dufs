@@ -491,13 +491,13 @@ impl Server {
             ret?;
         }
 
-        println!("upload success: {:?}", path);
+        // println!("upload success: {:?}", path);
 
         if path.extension().unwrap_or_default() == "mp4" {
             let parent = path.parent().unwrap_or(Path::new(""));
-            let file_stem = path.file_stem().unwrap_or_default();
-            let hls_path = parent.join(file_stem).with_extension("m3u8");
-            println!("hls_path: {:?}", hls_path);
+            // let file_stem = path.file_stem().unwrap_or_default();
+            let hls_path = parent.join("index").with_extension("m3u8");
+            // println!("hls_path: {:?}", hls_path);
             let hls_path_clone = hls_path.clone();
 
             let mut ffmpeg_gen_hls = std::process::Command::new("ffmpeg");
@@ -511,7 +511,7 @@ impl Server {
             ffmpeg_gen_hls.output().expect("Failed to execute ffmpeg_gen_hls");
 
             let thumb_path = parent.join("thumb1.png");
-            println!("thumb_path: {:?}", thumb_path);
+            // println!("thumb_path: {:?}", thumb_path);
             let mut ffmpeg_gen_thumb = std::process::Command::new("ffmpeg");
             ffmpeg_gen_thumb.arg("-i").arg(path);
             ffmpeg_gen_thumb.arg("-vf").arg("thumbnail");
