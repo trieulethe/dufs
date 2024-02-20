@@ -389,6 +389,7 @@ function renderPathsTableHead() {
     return `<th class="cell-${item.name}" ${item.props}><a href="?${qs}">${item.text}${icon}</a></th>`
   }).join("\n")}
       <th class="cell-actions">Actions</th>
+      <th class="cell-thumb">Thumbnail</th>
       <th class="cell-iframe">Iframe</th>
     </tr>
   `);
@@ -476,15 +477,16 @@ function addPath(file, index) {
         <td class="cell-mtime">${formatMtime(file.mtime)}</td>
         <td class="cell-size">${formatSize(file.size).join(" ")}</td>
         ${actionCell}
+        <td class="cell-thumb"><img src="${url}thumb1.png" width="80" height="80"></td>
         <td class="cell-iframe">
           <code id="htmlCode">&lt;iframe src="${url}index.html" height="500" width="800"/&gt;</code>
         </td>
       </tr>`
     );
   } else {
-        $pathsTableBody.insertAdjacentHTML(
-			"beforeend",
-			`
+    $pathsTableBody.insertAdjacentHTML(
+      "beforeend",
+      `
       <tr id="addPath${index}">
         <td class="path cell-icon">
           ${getPathSvg(file.path_type)}
@@ -497,14 +499,14 @@ function addPath(file, index) {
         ${actionCell}
         <td class="cell-iframe"></td>
       </tr>`
-		);
+    );
   }
 }
 
 function getIframe(isDir) {
   if (isDir) {
     return `<code id="htmlCode">&lt;iframe src="${url}index.html" height="500" width="800"/&gt;</code>`;
-  } 
+  }
   return `<p>None</p>`
 }
 
@@ -922,12 +924,12 @@ async function assertResOK(res) {
 }
 
 function getEncoding(contentType) {
-    const charset = contentType?.split(";")[1];
-    if (/charset/i.test(charset)) {
-      let encoding = charset.split("=")[1];
-      if (encoding) {
-        return encoding.toLowerCase()
-      }
+  const charset = contentType?.split(";")[1];
+  if (/charset/i.test(charset)) {
+    let encoding = charset.split("=")[1];
+    if (encoding) {
+      return encoding.toLowerCase()
     }
-    return 'utf-8'
+  }
+  return 'utf-8'
 }

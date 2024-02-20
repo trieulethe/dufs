@@ -156,6 +156,10 @@ body {
   padding-left: 0.6em;
 }
 
+.paths-table tbody .cell-actions {
+  margin-top: 2.0em;
+}
+
 .paths-table .cell-mtime {
   width: 120px;
   padding-left: 0.6em;
@@ -244,7 +248,7 @@ body {
 
 @media (min-width: 768px) {
   .path a {
-    min-width: 400px;
+    min-width: 200px;
   }
 }
 
