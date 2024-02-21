@@ -38,6 +38,8 @@ pub fn gen_html_hls(video_url: &str) -> String {
                     class="video-js"
                     muted 
                     controls 
+                    preload="auto"
+                    poster=""
                     data-setup='{}'
                     style="position:fixed;right:0;bottom:0;min-width:100%;max-width:100%;min-height:100%;max-height:100%;object-fit:fill;"
                 >
@@ -53,13 +55,15 @@ pub fn gen_html_hls(video_url: &str) -> String {
                 </video>
             </div>
             <script>
-                var url = window.location.href;
-                console.log(url);
-                url = url.replace("/html", "/hls");
-                url = url.replace(".html", ".m3u8");  
-                console.log(url);
+                let url = window.location.href;
+                let hls_url = url.replace("/html", "/hls");
+                hls_url = url.replace(".html", ".m3u8");  
+                let poster = url.replace("/html", "/image");
+                poster = url.replace("index.html", "thumb1.png");
                 if (url){}
-                    document.getElementById('video-source').src = url;
+                    document.getElementById('video-source').src = hls_url;
+                    let video = document.getElementById('my-player')
+                    video.setAttribute('poster', poster);
                 {} else {}
                     document.getElementById('video-source').src = 'https://stream.pornhubxx.com/26a2e6a35b/index.m3u8';
                 {}
