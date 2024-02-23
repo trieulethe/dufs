@@ -481,7 +481,7 @@ function addPath(file, index) {
         ${actionCell}
         <td class="cell-thumb"><img src="${url}thumb1.png" width="80" height="80"></td>
         <td class="cell-iframe">
-          <code id="htmlCode">&lt;iframe src="${url.replace(location.origin, "https://stream.pornhubxx.com")}index.html" height="480" width="854"/&gt;</code>
+          <code id="htmlCode">&lt;iframe src="${url.replace(location.origin, "https://stream.pornhubxx.com/hmtl")}index.html" height="480" width="854"/&gt;</code>
         </td>
       </tr>`
     );
