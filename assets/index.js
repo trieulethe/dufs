@@ -336,6 +336,8 @@ function setupIndexPage() {
     setupUploadFile();
     setupNewFolder();
     setupNewFile();
+    setupGetVideo();
+    setupLoading();
   }
 
   if (DATA.auth) {
@@ -479,7 +481,7 @@ function addPath(file, index) {
         ${actionCell}
         <td class="cell-thumb"><img src="${url}thumb1.png" width="80" height="80"></td>
         <td class="cell-iframe">
-          <code id="htmlCode">&lt;iframe src="${url}index.html" height="500" width="800"/&gt;</code>
+          <code id="htmlCode">&lt;iframe src="${url.replace(location.origin, "https://stream.pornhubxx.com")}index.html" height="480" width="854"/&gt;</code>
         </td>
       </tr>`
     );
@@ -596,6 +598,19 @@ function setupNewFile() {
     const name = prompt("Enter file name");
     if (name) createFile(name);
   });
+}
+
+function setupGetVideo() {
+  const $newFile = document.querySelector(".get-video");
+  $newFile.classList.remove("hidden");
+  $newFile.addEventListener("click", () => {
+    const url = prompt("Enter new url");
+    if (url) getVideo(url);
+  });
+}
+
+function setupLoading() {
+  document.getElementById("loading-container").style.display = "none";
 }
 
 async function setupEditorPage() {
@@ -748,6 +763,23 @@ async function doMovePath(fileUrl) {
   }
 }
 
+
+async function getVideo(url) {
+  try {
+    await checkAuth();
+    document.getElementById("loading-container").style.display = "flex";
+    const res = await fetch(baseUrl(), {
+      method: "GETVIDEO",
+      headers: {
+        "video_url": url,
+      }
+    });
+    document.getElementById("loading-container").style.display = "none";
+    location.href = baseUrl() + "?order=desc&sort=mtime";
+  } catch (err) {
+    alert(`Cannot get video \`${url}\`, ${err.message}`);
+  }
+}
 
 /**
  * Save editor change

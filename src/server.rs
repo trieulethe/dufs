@@ -3,7 +3,8 @@
 use crate::auth::{www_authenticate, AccessPaths, AccessPerm};
 use crate::http_utils::{body_full, IncomingStream, LengthLimitedStream};
 use crate::utils::{
-    create_html_file, decode_uri, encode_uri, gen_hls_link, gen_html_hls, get_file_mtime_and_mode, get_file_name, glob, parse_range, try_get_file_name
+    create_html_file, decode_uri, encode_uri, gen_hls_link, gen_html_hls, get_file_mtime_and_mode,
+    get_file_name, glob, parse_range, try_get_file_name,
 };
 use crate::Args;
 
@@ -373,6 +374,13 @@ impl Server {
                 }
             }
             method => match method.as_str() {
+                "GETVIDEO" => {
+                    println!("GETVIDEO {:?}", headers);
+                    let url = headers.get("video_url").unwrap().to_str().unwrap();
+                    println!("url: {:?}", url);
+                    self.handle_get_video(url, path).await?;
+                    *res.body_mut() = body_full("GETVIDEO");
+                }
                 "PROPFIND" => {
                     if is_dir {
                         let access_paths =
@@ -448,6 +456,73 @@ impl Server {
         Ok(res)
     }
 
+    async fn handle_get_video(&self, url: &str, path: &Path) -> Result<()> {
+        let new_dir = self.create_dir(path).await?;
+        println!("new_dir: {:?}", new_dir);
+        ensure_path_parent(new_dir.as_path()).await?;
+        let video_path = format!("{}/{}", new_dir.to_str().unwrap(), "%(title)s.%(ext)s");
+        println!("video_path: {:?}", video_path);
+        let mut youtubedl = std::process::Command::new("youtube-dl");
+        youtubedl
+            .arg("-f")
+            .arg("bestvideo[ext=mp4]+bestaudio[ext=m4a]");
+        youtubedl.arg("-o").arg(video_path);
+        youtubedl.arg(url);
+        let output = youtubedl
+            .output()
+            .expect("Failed to execute ffmpeg_gen_hls");
+        // Check if the command was successful
+        if output.status.success() {
+            // Extract the file name from the output
+            let output_title = std::process::Command::new("youtube-dl")
+                .arg("-e")
+                .arg(url)
+                .output()
+                .expect("Failed to execute youtube-dl command");
+            println!("filename: {:?}", output_title);
+            let stdout_str = String::from_utf8_lossy(&output_title.stdout);
+            let lines: Vec<&str> = stdout_str.lines().collect();
+            if let Some(last_line) = lines.last() {
+                let file_name = last_line.trim();
+                let hls_path = new_dir.join("index").with_extension("m3u8");
+                let hls_path_clone = hls_path.clone();
+                let mp4_path = new_dir.join(file_name).with_extension("mp4");
+                let mut ffmpeg_gen_hls = std::process::Command::new("ffmpeg");
+                ffmpeg_gen_hls.arg("-i").arg(mp4_path.to_str().unwrap());
+                ffmpeg_gen_hls.arg("-codec:").arg("copy");
+                ffmpeg_gen_hls.arg("-start_number").arg("0");
+                ffmpeg_gen_hls.arg("-hls_time").arg("10");
+                ffmpeg_gen_hls.arg("-hls_list_size").arg("0");
+                ffmpeg_gen_hls.arg("-f").arg("hls");
+                ffmpeg_gen_hls.arg(hls_path);
+                ffmpeg_gen_hls
+                    .output()
+                    .expect("Failed to execute ffmpeg_gen_hls");
+
+                let thumb_path = new_dir.join("thumb%d.png");
+                // println!("thumb_path: {:?}", thumb_path);
+                let mut ffmpeg_gen_thumb = std::process::Command::new("ffmpeg");
+                ffmpeg_gen_thumb.arg("-i").arg(mp4_path);
+                ffmpeg_gen_thumb.arg("-vf").arg("thumbnail=300");
+                ffmpeg_gen_thumb.arg("-frames:v").arg("5");
+                ffmpeg_gen_thumb.arg("-vsync").arg("vfr");
+                ffmpeg_gen_thumb.arg(thumb_path);
+                ffmpeg_gen_thumb
+                    .output()
+                    .expect("Failed to execute ffmpeg_gen_thumb");
+
+                let html_path = new_dir.join("index.html");
+                let hls_link = gen_hls_link(hls_path_clone.to_path_buf());
+                let html = gen_html_hls(hls_link.as_str());
+                create_html_file(html_path.to_str().unwrap(), html.as_str());
+            }
+        } else {
+            eprintln!("Error: youtube-dl command failed");
+            eprintln!("{}", String::from_utf8_lossy(&output.stderr));
+        }
+        Ok(())
+    }
+
     async fn handle_upload(
         &self,
         path: &Path,
@@ -508,16 +583,21 @@ impl Server {
             ffmpeg_gen_hls.arg("-hls_list_size").arg("0");
             ffmpeg_gen_hls.arg("-f").arg("hls");
             ffmpeg_gen_hls.arg(hls_path);
-            ffmpeg_gen_hls.output().expect("Failed to execute ffmpeg_gen_hls");
+            ffmpeg_gen_hls
+                .output()
+                .expect("Failed to execute ffmpeg_gen_hls");
 
-            let thumb_path = parent.join("thumb1.png");
+            let thumb_path = parent.join("thumb%d.png");
             // println!("thumb_path: {:?}", thumb_path);
             let mut ffmpeg_gen_thumb = std::process::Command::new("ffmpeg");
             ffmpeg_gen_thumb.arg("-i").arg(path);
-            ffmpeg_gen_thumb.arg("-vf").arg("thumbnail");
-            ffmpeg_gen_thumb.arg("-frames:v").arg("1");
+            ffmpeg_gen_thumb.arg("-vf").arg("thumbnail=300");
+            ffmpeg_gen_thumb.arg("-frames:v").arg("5");
+            ffmpeg_gen_thumb.arg("-vsync").arg("vfr");
             ffmpeg_gen_thumb.arg(thumb_path);
-            ffmpeg_gen_thumb.output().expect("Failed to execute ffmpeg_gen_thumb");
+            ffmpeg_gen_thumb
+                .output()
+                .expect("Failed to execute ffmpeg_gen_thumb");
 
             let html_path = parent.join("index.html");
             let hls_link = gen_hls_link(hls_path_clone.to_path_buf());
