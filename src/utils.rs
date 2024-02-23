@@ -2,25 +2,15 @@ use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, Utc};
 #[cfg(feature = "tls")]
 use rustls_pki_types::{CertificateDer, PrivateKeyDer};
-use std::{
-    borrow::Cow, fs::File, path::{Path, PathBuf}, time::{Duration, SystemTime, UNIX_EPOCH}
-};
 use std::io::Write;
+use std::{
+    borrow::Cow,
+    fs::File,
+    path::Path,
+    time::{Duration, SystemTime, UNIX_EPOCH},
+};
 
-fn get_dir_name_file_name(path: PathBuf) -> String {
-    let parent = path.parent().unwrap();
-    let dir_name = parent.file_name().unwrap();
-    let dir_name_str = dir_name.to_str().unwrap();
-
-    format!("{}/{}", dir_name_str, path.file_name().unwrap().to_str().unwrap())
-}
-
-pub fn gen_hls_link(hls_path: PathBuf) -> String {
-    let file_name = get_dir_name_file_name(hls_path);
-    format!("https://stream.toolack.com/hls/{}", file_name)
-}
-
-pub fn gen_html_hls(video_url: &str) -> String {
+pub fn gen_html_hls() -> String {
     format!(
         r#"
         <!DOCTYPE html>
@@ -73,11 +63,7 @@ pub fn gen_html_hls(video_url: &str) -> String {
         </body>
         </html>
     "#,
-        "{}",
-        "{",
-        "}",
-        "{",
-        "}"
+        "{}", "{", "}", "{", "}"
     )
 }
 
