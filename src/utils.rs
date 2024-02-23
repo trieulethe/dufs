@@ -27,7 +27,8 @@ pub fn gen_html_hls(video_url: &str) -> String {
         <html lang="en">
         <head>
             <meta charset="UTF-8">
-            <title>Live Streaming</title>
+            <meta name="robots" content="noindex">
+            <title>Live CDN</title>
             <link href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video-js.min.css" rel="stylesheet">
         </head>
         <body style="background:#000;color:#fff;">
