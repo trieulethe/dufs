@@ -456,14 +456,12 @@ impl Server {
 
     async fn handle_get_video(&self, url: &str) -> Result<()> {
         let new_dir = self.create_dir().await?;
-        println!("new_dir: {:?}", new_dir);
         ensure_path_parent(new_dir.as_path()).await?;
         let video_path = format!("{}/{}", new_dir.to_str().unwrap(), "%(title)s.%(ext)s");
-        println!("video_path: {:?}", video_path);
         let mut youtubedl = std::process::Command::new("youtube-dl");
-        youtubedl
-            .arg("-f")
-            .arg("bestvideo[ext=mp4]+bestaudio[ext=m4a]");
+        // youtubedl
+        // .arg("-f")
+        // .arg("bestvideo[ext=mp4]+bestaudio[ext=m4a]");
         youtubedl.arg("-o").arg(video_path);
         youtubedl.arg(url);
         let output = youtubedl
