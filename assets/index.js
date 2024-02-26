@@ -262,14 +262,18 @@ class Uploader {
 			((event.loaded + this.uploadOffset) / this.file.size) * 100
 		);
 		const duration = formatDuration((event.total - event.loaded) / speed);
-		this.$uploadStatus.innerHTML = `<span style="width: 80px;">${speedText}</span><span>${progress} ${duration}</span>`;
+		if (progress.includes("Please")) {
+			this.$uploadStatus.innerHTML = `<span style="width: 80px;">${speedText}</span><span>${progress}</span>`;
+		} else {
+			this.$uploadStatus.innerHTML = `<span style="width: 80px;">${speedText}</span><span>${progress} ${duration}</span>`;
+		}
 		this.uploaded = event.loaded;
 		this.lastUptime = now;
 	}
 
 	complete() {
 		const $uploadStatusNew = this.$uploadStatus.cloneNode(true);
-		$uploadStatusNew.innerHTML = `✓`;
+		$uploadStatusNew.innerHTML = `Done ✓`;
 		this.$uploadStatus.parentNode.replaceChild(
 			$uploadStatusNew,
 			this.$uploadStatus
@@ -1017,6 +1021,9 @@ function formatDuration(seconds) {
 }
 
 function formatPercent(percent) {
+	if (percent === 100) {
+		return "Please don't reload page, Generating file...";
+	}
 	if (percent > 10) {
 		return percent.toFixed(1) + "%";
 	} else {

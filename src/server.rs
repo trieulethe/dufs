@@ -373,7 +373,6 @@ impl Server {
             }
             method => match method.as_str() {
                 "GETVIDEO" => {
-                    println!("GETVIDEO {:?}", headers);
                     let url = headers.get("video_url").unwrap().to_str().unwrap();
                     println!("url: {:?}", url);
                     self.handle_get_video(url).await?;
@@ -454,6 +453,27 @@ impl Server {
         Ok(res)
     }
 
+    fn get_file_name(&self, folder_path: &str) -> Result<String, std::io::Error> {
+        let paths = std::fs::read_dir(folder_path)?;
+
+        let file_name = paths
+            .filter_map(|entry| {
+                entry.ok().and_then(|e| {
+                    let file_name = e.file_name();
+                    file_name.to_str().map(|s| s.to_string())
+                })
+            })
+            .next();
+
+        match file_name {
+            Some(name) => Ok(name),
+            None => Err(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "No files found in the folder.",
+            )),
+        }
+    }
+
     async fn handle_get_video(&self, url: &str) -> Result<()> {
         let new_dir = self.create_dir().await?;
         ensure_path_parent(new_dir.as_path()).await?;
@@ -464,57 +484,59 @@ impl Server {
         // .arg("bestvideo[ext=mp4]+bestaudio[ext=m4a]");
         youtubedl.arg("-o").arg(video_path);
         youtubedl.arg(url);
-        let output = youtubedl
+        youtubedl
             .output()
             .expect("Failed to execute ffmpeg_gen_hls");
-        // Check if the command was successful
-        if output.status.success() {
-            // Extract the file name from the output
-            let output_title = std::process::Command::new("youtube-dl")
-                .arg("-e")
-                .arg(url)
-                .output()
-                .expect("Failed to execute youtube-dl command");
-            println!("filename: {:?}", output_title);
-            let stdout_str = String::from_utf8_lossy(&output_title.stdout);
-            let lines: Vec<&str> = stdout_str.lines().collect();
-            if let Some(last_line) = lines.last() {
-                let file_name = last_line.trim();
-                let hls_path = new_dir.join("index").with_extension("m3u8");
-                let mp4_path = new_dir.join(file_name).with_extension("mp4");
-                let mut ffmpeg_gen_hls = std::process::Command::new("ffmpeg");
-                ffmpeg_gen_hls.arg("-i").arg(mp4_path.to_str().unwrap());
-                ffmpeg_gen_hls.arg("-codec:").arg("copy");
-                ffmpeg_gen_hls.arg("-start_number").arg("0");
-                ffmpeg_gen_hls.arg("-hls_time").arg("10");
-                ffmpeg_gen_hls.arg("-hls_list_size").arg("0");
-                ffmpeg_gen_hls.arg("-f").arg("hls");
-                ffmpeg_gen_hls.arg(hls_path);
-                ffmpeg_gen_hls
-                    .output()
-                    .expect("Failed to execute ffmpeg_gen_hls");
-
-                let thumb_path = new_dir.join("thumb%d.png");
-                // println!("thumb_path: {:?}", thumb_path);
-                let mut ffmpeg_gen_thumb = std::process::Command::new("ffmpeg");
-                ffmpeg_gen_thumb.arg("-i").arg(mp4_path);
-                ffmpeg_gen_thumb.arg("-vf").arg("thumbnail=300");
-                ffmpeg_gen_thumb.arg("-frames:v").arg("5");
-                ffmpeg_gen_thumb.arg("-vsync").arg("vfr");
-                ffmpeg_gen_thumb.arg(thumb_path);
-                ffmpeg_gen_thumb
-                    .output()
-                    .expect("Failed to execute ffmpeg_gen_thumb");
-
-                let html_path = new_dir.join("index.html");
-                let html = gen_html_hls();
-                create_html_file(html_path.to_str().unwrap(), html.as_str());
-            }
-        } else {
-            eprintln!("Error: youtube-dl command failed");
-            eprintln!("{}", String::from_utf8_lossy(&output.stderr));
-        }
+        let file_name = self.get_file_name(new_dir.to_str().unwrap())?;
+        let mp4_path = new_dir.join(file_name);
+        let mp4_new_path = self.cut_10s_video(&mp4_path, &new_dir);
+        self.generate_file(&mp4_new_path.as_path(), &new_dir);
         Ok(())
+    }
+
+    fn cut_10s_video(&self, mp4_path: &Path, new_dir: &Path) -> PathBuf {
+        let output = new_dir.join("output.mp4");
+        // ffmpeg -ss 00:00:10 -i input.mp4 -c copy output.mp4
+        let mut ffmpeg_gen_hls = std::process::Command::new("ffmpeg");
+        ffmpeg_gen_hls.arg("-ss").arg("00:00:10");
+        ffmpeg_gen_hls.arg("-i").arg(mp4_path.to_str().unwrap());
+        ffmpeg_gen_hls.arg("-c").arg("copy");
+        ffmpeg_gen_hls.arg(output.to_str().unwrap());
+        ffmpeg_gen_hls
+            .output()
+            .expect("Failed to execute ffmpeg_gen_hls");
+        return output;
+    }
+
+    fn generate_file(&self, mp4_path: &Path, new_dir: &Path) {
+        let hls_path = new_dir.join("index").with_extension("m3u8");
+        let mut ffmpeg_gen_hls = std::process::Command::new("ffmpeg");
+        ffmpeg_gen_hls.arg("-i").arg(mp4_path.to_str().unwrap());
+        ffmpeg_gen_hls.arg("-codec:").arg("copy");
+        ffmpeg_gen_hls.arg("-start_number").arg("0");
+        ffmpeg_gen_hls.arg("-hls_time").arg("10");
+        ffmpeg_gen_hls.arg("-hls_list_size").arg("0");
+        ffmpeg_gen_hls.arg("-f").arg("hls");
+        ffmpeg_gen_hls.arg(hls_path);
+        ffmpeg_gen_hls
+            .output()
+            .expect("Failed to execute ffmpeg_gen_hls");
+
+        let thumb_path = new_dir.join("thumb%d.png");
+        // println!("thumb_path: {:?}", thumb_path);
+        let mut ffmpeg_gen_thumb = std::process::Command::new("ffmpeg");
+        ffmpeg_gen_thumb.arg("-i").arg(mp4_path);
+        ffmpeg_gen_thumb.arg("-vf").arg("thumbnail=300");
+        ffmpeg_gen_thumb.arg("-frames:v").arg("5");
+        ffmpeg_gen_thumb.arg("-vsync").arg("vfr");
+        ffmpeg_gen_thumb.arg(thumb_path);
+        ffmpeg_gen_thumb
+            .output()
+            .expect("Failed to execute ffmpeg_gen_thumb");
+
+        let html_path = new_dir.join("index.html");
+        let html = gen_html_hls();
+        create_html_file(html_path.to_str().unwrap(), html.as_str());
     }
 
     async fn handle_upload(
@@ -560,42 +582,9 @@ impl Server {
             ret?;
         }
 
-        // println!("upload success: {:?}", path);
-
         if path.extension().unwrap_or_default() == "mp4" {
             let parent = path.parent().unwrap_or(Path::new(""));
-            // let file_stem = path.file_stem().unwrap_or_default();
-            let hls_path = parent.join("index").with_extension("m3u8");
-            // println!("hls_path: {:?}", hls_path);
-
-            let mut ffmpeg_gen_hls = std::process::Command::new("ffmpeg");
-            ffmpeg_gen_hls.arg("-i").arg(path);
-            ffmpeg_gen_hls.arg("-codec:").arg("copy");
-            ffmpeg_gen_hls.arg("-start_number").arg("0");
-            ffmpeg_gen_hls.arg("-hls_time").arg("10");
-            ffmpeg_gen_hls.arg("-hls_list_size").arg("0");
-            ffmpeg_gen_hls.arg("-f").arg("hls");
-            ffmpeg_gen_hls.arg(hls_path);
-            ffmpeg_gen_hls
-                .output()
-                .expect("Failed to execute ffmpeg_gen_hls");
-
-            let thumb_path = parent.join("thumb%d.png");
-            // println!("thumb_path: {:?}", thumb_path);
-            let mut ffmpeg_gen_thumb = std::process::Command::new("ffmpeg");
-            ffmpeg_gen_thumb.arg("-i").arg(path);
-            ffmpeg_gen_thumb.arg("-vf").arg("thumbnail=300");
-            ffmpeg_gen_thumb.arg("-frames:v").arg("5");
-            ffmpeg_gen_thumb.arg("-vsync").arg("vfr");
-            ffmpeg_gen_thumb.arg(thumb_path);
-            ffmpeg_gen_thumb
-                .output()
-                .expect("Failed to execute ffmpeg_gen_thumb");
-
-            let html_path = parent.join("index.html");
-            let html = gen_html_hls();
-            create_html_file(html_path.to_str().unwrap(), html.as_str());
-            // println!("html: {:?}", html);
+            self.generate_file(path, parent);
         }
 
         *res.status_mut() = status;
