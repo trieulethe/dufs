@@ -514,7 +514,7 @@ impl Server {
         ffmpeg_gen_hls.arg("-i").arg(mp4_path.to_str().unwrap());
         ffmpeg_gen_hls.arg("-codec:").arg("copy");
         ffmpeg_gen_hls.arg("-start_number").arg("0");
-        ffmpeg_gen_hls.arg("-hls_time").arg("10");
+        ffmpeg_gen_hls.arg("-hls_time").arg("5");
         ffmpeg_gen_hls.arg("-hls_list_size").arg("0");
         ffmpeg_gen_hls.arg("-f").arg("hls");
         ffmpeg_gen_hls.arg(hls_path);
