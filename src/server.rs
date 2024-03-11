@@ -479,10 +479,9 @@ impl Server {
         ensure_path_parent(new_dir.as_path()).await?;
         let video_path = format!("{}/{}", new_dir.to_str().unwrap(), "%(title)s.%(ext)s");
         let mut youtubedl = std::process::Command::new("youtube-dl");
-        // youtubedl
-        // .arg("-f")
-        // .arg("bestvideo[ext=mp4]+bestaudio[ext=m4a]");
         youtubedl.arg("-o").arg(video_path);
+        youtubedl.arg("--write-thumbnail");
+        youtubedl.arg("--write-info-json");
         youtubedl.arg(url);
         youtubedl
             .output()
@@ -514,7 +513,7 @@ impl Server {
         ffmpeg_gen_hls.arg("-i").arg(mp4_path.to_str().unwrap());
         ffmpeg_gen_hls.arg("-codec:").arg("copy");
         ffmpeg_gen_hls.arg("-start_number").arg("0");
-        ffmpeg_gen_hls.arg("-hls_time").arg("5");
+        ffmpeg_gen_hls.arg("-hls_time").arg("1"); 
         ffmpeg_gen_hls.arg("-hls_list_size").arg("0");
         ffmpeg_gen_hls.arg("-f").arg("hls");
         ffmpeg_gen_hls.arg(hls_path);
@@ -527,7 +526,7 @@ impl Server {
         let mut ffmpeg_gen_thumb = std::process::Command::new("ffmpeg");
         ffmpeg_gen_thumb.arg("-i").arg(mp4_path);
         ffmpeg_gen_thumb.arg("-vf").arg("thumbnail=300");
-        ffmpeg_gen_thumb.arg("-frames:v").arg("5");
+        ffmpeg_gen_thumb.arg("-frames:v").arg("3");
         ffmpeg_gen_thumb.arg("-vsync").arg("vfr");
         ffmpeg_gen_thumb.arg(thumb_path);
         ffmpeg_gen_thumb

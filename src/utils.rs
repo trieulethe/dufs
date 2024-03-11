@@ -35,7 +35,6 @@ pub fn gen_html_hls() -> String {
                     style="position:fixed;right:0;bottom:0;min-width:100%;max-width:100%;min-height:100%;max-height:100%;object-fit:fill;"
                 >
                     <source id="video-source" type="application/x-mpegURL"></source>
-                    </source>
                     <p class="vjs-no-js">
                         To view this video please enable JavaScript, and consider upgrading to a
                         web browser that
@@ -50,7 +49,7 @@ pub fn gen_html_hls() -> String {
                 let hls_url = url.replace("/html", "/hls");
                 hls_url = url.replace(".html", ".m3u8");  
                 let poster = url.replace("/html", "/image");
-                poster = url.replace("index.html", "thumb1.png");
+                poster = url.replace("index.html", "thumb3.png");
                 if (url){}
                     document.getElementById('video-source').src = hls_url;
                     let video = document.getElementById('my-player')
