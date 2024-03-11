@@ -536,7 +536,9 @@ function addPath(file, index) {
         <td class="cell-thumb"><img src="${url}thumb1.png" width="80" height="80"></td>
         <td class="cell-iframe">
           <code id="htmlCode">
-            &lt;div&gt;&lt;iframe src="${getStreamUrl(url)}index.html" height="480" width="854"&gt;&lt;/iframe&gt;&lt;/div&gt;
+            &lt;div&gt;&lt;iframe src="${getStreamUrl(
+				url
+			)}index.html" height="480" width="854" allowfullscreen&gt;&lt;/iframe&gt;&lt;/div&gt;
           </code>
         </td>
       </tr>`
@@ -567,7 +569,7 @@ function getStreamUrl (url) {
 
 function getIframe(isDir) {
 	if (isDir) {
-		return `<code id="htmlCode">&lt;div&gt;&lt;iframe src="${url}index.html" height="500" width="800"/&gt; &lt;/div&gt;</code>`;
+		return `<code id="htmlCode">&lt;div&gt;&lt;iframe src="${url}index.html" height="500" width="800" /&gt; &lt;/div&gt;</code>`;
 	}
 	return `<p>None</p>`;
 }
