@@ -460,7 +460,14 @@ impl Server {
             .filter_map(|entry| {
                 entry.ok().and_then(|e| {
                     let file_name = e.file_name();
-                    file_name.to_str().map(|s| s.to_string())
+                    let file_name_str = file_name.to_str().map(|s| s.to_string())?;
+
+                    // Check if the file has the ".mp4" extension
+                    if file_name_str.ends_with(".mp4") {
+                        Some(file_name_str)
+                    } else {
+                        None
+                    }
                 })
             })
             .next();
@@ -469,7 +476,7 @@ impl Server {
             Some(name) => Ok(name),
             None => Err(std::io::Error::new(
                 std::io::ErrorKind::NotFound,
-                "No files found in the folder.",
+                "No '.mp4' files found in the folder.",
             )),
         }
     }
@@ -513,7 +520,7 @@ impl Server {
         ffmpeg_gen_hls.arg("-i").arg(mp4_path.to_str().unwrap());
         ffmpeg_gen_hls.arg("-codec:").arg("copy");
         ffmpeg_gen_hls.arg("-start_number").arg("0");
-        ffmpeg_gen_hls.arg("-hls_time").arg("1"); 
+        ffmpeg_gen_hls.arg("-hls_time").arg("1");
         ffmpeg_gen_hls.arg("-hls_list_size").arg("0");
         ffmpeg_gen_hls.arg("-f").arg("hls");
         ffmpeg_gen_hls.arg(hls_path);
