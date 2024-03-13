@@ -280,6 +280,15 @@ body {
   cursor: pointer;
 }
 
+#videoFormContainer {
+  display: none;
+  position: fixed;
+}
+
+#videoFormContainer form div {
+  padding-top: 5px;
+}
+
 @media (min-width: 768px) {
   .path a {
     min-width: 200px;

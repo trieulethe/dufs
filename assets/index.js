@@ -382,6 +382,7 @@ function setupIndexPage() {
 		setupNewFolder();
 		setupNewFile();
 		setupGetVideo();
+		setupCutVideo();
 		setupLoading();
 	}
 
@@ -679,6 +680,16 @@ function setupGetVideo() {
 	});
 }
 
+function setupCutVideo() {
+	const $newFile = document.querySelector(".cut-video");
+	$newFile.classList.remove("hidden");
+	$newFile.addEventListener("click", () => {
+		document.getElementById('videoFormContainer').style.display = "flex";
+		// const url = prompt("Enter new url");
+		// if (url) cutVideo(url);
+	});
+}
+
 function setupLoading() {
 	document.getElementById("loading-container").style.display = "none";
 }
@@ -858,6 +869,28 @@ async function getVideo(url) {
 		location.href = baseUrl() + "?order=desc&sort=mtime";
 	} catch (err) {
 		alert(`Cannot get video \`${url}\`, ${err.message}`);
+	}
+}
+
+async function cutVideo() {
+	var videoUrl = document.getElementById('cutVideoUrl').value;
+	var startTime = document.getElementById('startTime').value;
+	var endTime = document.getElementById('endTime').value;
+	try {
+		await checkAuth();
+		document.getElementById("loading-container").style.display = "flex";
+		await fetch(baseUrl(), {
+			method: "CUTVIDEO",
+			headers: {
+				video_url: videoUrl,
+				start_time: startTime,
+				end_time: endTime,
+			},
+		});
+		document.getElementById("loading-container").style.display = "none";
+		location.href = baseUrl() + "?order=desc&sort=mtime";
+	} catch (err) {
+		alert(`Cannot cut video \`${url}\`, ${err.message}`);
 	}
 }
 

@@ -9,6 +9,7 @@ use std::{
     path::Path,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+use url::Url;
 
 pub fn gen_html_hls() -> String {
     format!(
@@ -75,6 +76,21 @@ pub fn create_html_file(file_path: &str, html_content: &str) {
         Ok(_) => println!("Tệp tin HTML đã được tạo và ghi thành công."),
         Err(e) => eprintln!("Lỗi khi ghi tệp tin HTML: {}", e),
     }
+}
+
+pub fn get_path_from_url(url_str: &str) -> Option<String> {
+    // Parse the URL
+    if let Ok(url) = Url::parse(url_str) {
+        // Extract the path and remove the leading "/"
+        let path = url.path().trim_start_matches('/');
+        return Some(path.to_string());
+    }
+
+    None
+}
+
+pub fn check_file_exist(file_path: &str) -> bool {
+    std::fs::metadata(file_path).is_ok()
 }
 
 pub fn unix_now() -> Result<Duration> {

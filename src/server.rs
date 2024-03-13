@@ -3,8 +3,9 @@
 use crate::auth::{www_authenticate, AccessPaths, AccessPerm};
 use crate::http_utils::{body_full, IncomingStream, LengthLimitedStream};
 use crate::utils::{
-    create_html_file, decode_uri, encode_uri, gen_html_hls, get_file_mtime_and_mode, get_file_name,
-    glob, parse_range, try_get_file_name,
+    check_file_exist, create_html_file, decode_uri, encode_uri, gen_html_hls,
+    get_file_mtime_and_mode, get_file_name, get_path_from_url, glob, parse_range,
+    try_get_file_name,
 };
 use crate::Args;
 
@@ -374,9 +375,41 @@ impl Server {
             method => match method.as_str() {
                 "GETVIDEO" => {
                     let url = headers.get("video_url").unwrap().to_str().unwrap();
-                    println!("url: {:?}", url);
+                    // println!("url: {:?}", url);
                     self.handle_get_video(url).await?;
                     *res.body_mut() = body_full("GETVIDEO");
+                }
+                "CUTVIDEO" => {
+                    let url = headers.get("video_url").unwrap().to_str().unwrap();
+                    let start_time = headers.get("start_time").unwrap().to_str().unwrap();
+                    let end_time = headers.get("end_time").unwrap().to_str().unwrap();
+                    // println!("url: {:?}", url);
+                    // println!("start_time: {:?}", start_time);
+                    // println!("end_time: {:?}", end_time);
+                    // http://upload.toolack.com/0b02dc0409/output.mp4
+                    let path = get_path_from_url(url).unwrap();
+
+                    let mp4_path = self.args.serve_path.join(path);
+                    // println!("mp4_path: {:?}", mp4_path.to_str());
+
+                    let is_exist = check_file_exist(mp4_path.to_str().unwrap());
+                    // println!("is_exist: {:?}", is_exist);
+                    if is_exist {
+                        let output = mp4_path.parent().unwrap().join("video_cut.mp4");
+                        // println!("output: {:?}", output.to_str().unwrap());
+                        let mut ffmpeg_gen_hls = std::process::Command::new("ffmpeg");
+                        ffmpeg_gen_hls.arg("-i").arg(mp4_path.to_str().unwrap());
+                        ffmpeg_gen_hls.arg("-ss").arg(start_time);
+                        ffmpeg_gen_hls.arg("-to").arg(end_time);
+                        ffmpeg_gen_hls.arg("-async").arg("1");
+                        // ffmpeg_gen_hls.arg("-c").arg("copy");
+                        ffmpeg_gen_hls.arg(output.to_str().unwrap());
+                        ffmpeg_gen_hls
+                            .output()
+                            .expect("Failed to execute ffmpeg_gen_hls");
+                    } else {
+                        status_not_found(&mut res);
+                    }
                 }
                 "PROPFIND" => {
                     if is_dir {
