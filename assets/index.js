@@ -346,7 +346,7 @@ function addBreadcrumb(href, uri_prefix) {
 		if (i === 0) {
 			$breadcrumb.insertAdjacentHTML(
 				"beforeend",
-				`<a href="${path}" title="Root"><svg width="16" height="16" viewBox="0 0 16 16"><path d="M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5z"/></svg></a>`
+				`<a href="${path}" title="Root"><svg width="32" height="32" viewBox="0 0 1.92 1.92" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="#fff" fill-opacity=".01" d="M0 0h1.92v1.92H0z"/><path d="M.36.72v.96h1.2V.72L.96.24z" fill="#2F88FF"/><path d="M.36 1.68V.72l-.2.16.8-.64.8.64-.2-.16v.96z" stroke="#000" stroke-width=".16" stroke-linecap="round" stroke-linejoin="round"/><path d="M.76 1.16v.52h.4v-.52z" fill="#43CCF8" stroke="#fff" stroke-width=".16" stroke-linejoin="round"/><path d="M.36 1.68h1.2" stroke="#000" stroke-width=".16" stroke-linecap="round"/></svg></a>`
 			);
 		} else if (i === len - 1) {
 			$breadcrumb.insertAdjacentHTML(
@@ -675,7 +675,7 @@ function setupGetVideo() {
 	const $newFile = document.querySelector(".get-video");
 	$newFile.classList.remove("hidden");
 	$newFile.addEventListener("click", () => {
-		const url = prompt("Enter new url");
+		const url = prompt("Enter video url to get");
 		if (url) getVideo(url);
 	});
 }

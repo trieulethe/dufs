@@ -92,11 +92,11 @@ body {
   margin-right: 10px;
 }
 
-.toolbox>a,
-.toolbox>div {
+/* .toolbox>a, */
+/* .toolbox>div { */
   /* vertically align with breadcrumb text */
-  height: 1.1rem;
-}
+  /* height: 1.1rem; */
+/* } */
 
 .toolbox .control {
   cursor: pointer;
@@ -114,8 +114,8 @@ body {
 .searchbar {
   display: flex;
   flex-wrap: nowrap;
-  width: 246px;
-  height: 22px;
+  /* width: 246px; */
+  height: 30px;
   background-color: #fafafa;
   transition: all .15s;
   border: 1px #ddd solid;
@@ -129,7 +129,7 @@ body {
   height: 100%;
   font-size: 16px;
   line-height: 16px;
-  padding: 1px;
+  /* padding-top: 7px; */
   background-color: transparent;
   border: none;
   outline: none;
@@ -137,7 +137,8 @@ body {
 
 .searchbar .icon {
   color: #9a9a9a;
-  padding: 3px 3px;
+  padding-top: 3px;
+  padding-left: 5px;
   cursor: pointer;
 }
 

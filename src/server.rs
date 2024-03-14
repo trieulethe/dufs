@@ -375,7 +375,6 @@ impl Server {
             method => match method.as_str() {
                 "GETVIDEO" => {
                     let url = headers.get("video_url").unwrap().to_str().unwrap();
-                    // println!("url: {:?}", url);
                     self.handle_get_video(url).await?;
                     *res.body_mut() = body_full("GETVIDEO");
                 }
@@ -383,20 +382,11 @@ impl Server {
                     let url = headers.get("video_url").unwrap().to_str().unwrap();
                     let start_time = headers.get("start_time").unwrap().to_str().unwrap();
                     let end_time = headers.get("end_time").unwrap().to_str().unwrap();
-                    // println!("url: {:?}", url);
-                    // println!("start_time: {:?}", start_time);
-                    // println!("end_time: {:?}", end_time);
-                    // http://upload.toolack.com/0b02dc0409/output.mp4
                     let path = get_path_from_url(url).unwrap();
-
                     let mp4_path = self.args.serve_path.join(path);
-                    // println!("mp4_path: {:?}", mp4_path.to_str());
-
                     let is_exist = check_file_exist(mp4_path.to_str().unwrap());
-                    // println!("is_exist: {:?}", is_exist);
                     if is_exist {
                         let output = mp4_path.parent().unwrap().join("video_cut.mp4");
-                        // println!("output: {:?}", output.to_str().unwrap());
                         let mut ffmpeg_gen_hls = std::process::Command::new("ffmpeg");
                         ffmpeg_gen_hls.arg("-i").arg(mp4_path.to_str().unwrap());
                         ffmpeg_gen_hls.arg("-ss").arg(start_time);
@@ -578,6 +568,16 @@ impl Server {
         create_html_file(html_path.to_str().unwrap(), html.as_str());
     }
 
+    async fn get_path_file_type(&self, path: &Path) -> Result<PathBuf> {
+        if path.extension().unwrap_or_default() == "mp4" {
+            let new_dir = self.create_dir().await?;
+            let relative_path = new_dir.join(path.file_name().unwrap_or_default());
+            Ok(relative_path)
+        } else {
+            Ok(path.to_path_buf())
+        }
+    }
+
     async fn handle_upload(
         &self,
         path: &Path,
@@ -586,8 +586,9 @@ impl Server {
         req: Request,
         res: &mut Response,
     ) -> Result<()> {
-        let new_dir = self.create_dir().await?;
-        let relative_path = new_dir.join(path.file_name().unwrap_or_default());
+        println!("path: {:?}", path);
+        // let new_dir = self.create_dir().await?;
+        let relative_path = self.get_path_file_type(path).await?;
         let path = relative_path.as_path();
         ensure_path_parent(path).await?;
         let (mut file, status) = match upload_offset {
