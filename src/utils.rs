@@ -56,7 +56,6 @@ pub fn gen_html_hls() -> String {
                     let video = document.getElementById('my-player')
                     video.setAttribute('poster', poster);
                 {} else {}
-                    document.getElementById('video-source').src = 'https://stream.pornhubxx.com/26a2e6a35b/index.m3u8';
                 {}
                 const player = videojs('my-player');
             </script>
