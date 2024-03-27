@@ -534,7 +534,7 @@ function addPath(file, index) {
         <td class="cell-mtime">${formatMtime(file.mtime)}</td>
         <td class="cell-size">${formatSize(file.size).join(" ")}</td>
         ${actionCell}
-        <td class="cell-thumb"><img src="${url}thumb1.webp" width="80" height="80"></td>
+        <td class="cell-thumb"><img src="${url}thumb3.webp" width="80" height="80"></td>
         <td class="cell-iframe">
           <code id="htmlCode">
             &lt;div&gt;&lt;iframe src="${getStreamUrl(
