@@ -1,6 +1,6 @@
 [package]
 name = "upload"
-version = "0.3.73"
+version = "0.3.74"
 description = "Dufs is a distinctive utility file server"
 edition = "2021"
 

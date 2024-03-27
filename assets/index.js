@@ -565,7 +565,7 @@ function addPath(file, index) {
 }
 
 function getStreamUrl (url) {
-  return url.replace(location.origin, "https://stream.pornhubxx.com/html");
+  return url.replace(location.origin, "https://cdn.namihentai.com/html");
 }
 
 function getIframe(isDir) {
