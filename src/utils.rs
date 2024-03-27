@@ -50,7 +50,7 @@ pub fn gen_html_hls() -> String {
                 let hls_url = url.replace("/html", "/hls");
                 hls_url = url.replace(".html", ".m3u8");  
                 let poster = url.replace("/html", "/image");
-                poster = url.replace("index.html", "thumb3.png");
+                poster = url.replace("index.html", "thumb3.webp");
                 if (url){}
                     document.getElementById('video-source').src = hls_url;
                     let video = document.getElementById('my-player')

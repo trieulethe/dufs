@@ -563,6 +563,16 @@ impl Server {
             .output()
             .expect("Failed to execute ffmpeg_gen_thumb");
 
+        let thumb3 = new_dir.join("thumb3.png");
+        let thumb_webp = new_dir.join("thumb3.webp");
+        std::process::Command::new("cwebp")
+            .arg(thumb3)
+            .arg("-o")
+            .arg(thumb_webp)
+            .output()
+            .expect("Failed to execute thumb3.webp");
+
+
         let html_path = new_dir.join("index.html");
         let html = gen_html_hls();
         create_html_file(html_path.to_str().unwrap(), html.as_str());
