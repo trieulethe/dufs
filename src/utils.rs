@@ -47,8 +47,11 @@ pub fn gen_html_hls() -> String {
             </div>
             <script>
                 let url = window.location.href;
+                console.log("url", url);
                 let hls_url = url.replace("/html", "/hls");
+                console.log("hls_url 1", hls_url);
                 hls_url = url.replace(".html", ".m3u8");  
+                console.log("hls_url 2", hls_url);
                 let poster = url.replace("/html", "/image");
                 poster = url.replace("index.html", "thumb3.webp");
                 if (url){}
