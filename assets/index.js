@@ -20,6 +20,7 @@
  * @property {string} user
  * @property {boolean} dir_exists
  * @property {string} editable
+ * @property {string} domain
  */
 
 var DUFS_MAX_UPLOADINGS = 1;
@@ -565,7 +566,7 @@ function addPath(file, index) {
 }
 
 function getStreamUrl (url) {
-  return url.replace(location.origin, "https://stream.pornhubxx.com/html");
+  return url.replace(location.origin, DATA.domain);
 }
 
 function getIframe(isDir) {

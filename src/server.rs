@@ -1035,6 +1035,7 @@ impl Server {
             allow_upload: self.args.allow_upload,
             allow_delete: self.args.allow_delete,
             auth: self.args.auth.exist(),
+            domain: self.args.domain.clone(),
             user,
             editable,
         };
@@ -1272,6 +1273,7 @@ impl Server {
             auth: self.args.auth.exist(),
             user,
             paths,
+            domain: self.args.domain.clone(),
         };
         let output = if query_params.contains_key("json") {
             res.headers_mut()
@@ -1470,6 +1472,7 @@ struct IndexData {
     auth: bool,
     user: Option<String>,
     paths: Vec<PathItem>,
+    domain: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -1482,6 +1485,7 @@ struct EditData {
     auth: bool,
     user: Option<String>,
     editable: bool,
+    domain: String,
 }
 
 #[derive(Debug, Serialize, Eq, PartialEq, Ord, PartialOrd)]

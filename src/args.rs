@@ -212,6 +212,16 @@ pub fn build_cli() -> Command {
                 .value_name("shell")
                 .value_parser(value_parser!(Shell))
                 .help("Print shell completion script for <shell>"),
+        )
+        .arg(
+            Arg::new("domain")
+                .env("DUFS_DOMAIN")
+				.hide_env(true)
+                .short('d')
+                .long("domain")
+                .help("Set the domain")
+                .value_parser(value_parser!(String))
+                .value_name("domain")
         );
 
     #[cfg(feature = "tls")]
@@ -283,6 +293,7 @@ pub struct Args {
     pub compress: Compress,
     pub tls_cert: Option<PathBuf>,
     pub tls_key: Option<PathBuf>,
+    pub domain: String,
 }
 
 impl Args {
@@ -302,6 +313,10 @@ impl Args {
 
         if let Some(path) = matches.get_one::<PathBuf>("serve-path") {
             args.serve_path = path.clone()
+        }
+
+        if let Some(domain) = matches.get_one::<String>("domain") {
+            args.domain = domain.clone()
         }
 
         args.serve_path = Self::sanitize_path(args.serve_path)?;
