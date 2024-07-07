@@ -566,7 +566,7 @@ function addPath(file, index) {
 }
 
 function getStreamUrl (url) {
-  return url.replace(location.origin, DATA.domain);
+  return url.replace(location.origin, `${DATA.domain}/html`);
 }
 
 function getIframe(isDir) {
