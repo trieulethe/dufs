@@ -531,15 +531,15 @@ impl Server {
             // Download M3U8 and get segments
             let (m3u8_content, segments) = download_m3u8(url).await?;
 
-            // Download segments and save to output directory
-            self.download_segments(segments, new_dir.to_str().unwrap(), max_concurrent).await?;
-
             let rewritten_m3u8_file = format!("{}/index.m3u8", new_dir.to_str().unwrap());
             write_m3u8(&m3u8_content, &rewritten_m3u8_file)?;
 
             let html_path = new_dir.join("index.html");
             let html = gen_html_no_poster();
             create_html_file(html_path.to_str().unwrap(), html.as_str());
+
+            // Download segments and save to output directory
+            self.download_segments(segments, new_dir.to_str().unwrap(), max_concurrent).await?;            
         }
         Ok(())
     }
