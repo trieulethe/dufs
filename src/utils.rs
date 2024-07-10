@@ -2,7 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use chrono::{DateTime, Utc};
 #[cfg(feature = "tls")]
 use rustls_pki_types::{CertificateDer, PrivateKeyDer};
-use std::io::Write;
+use std::error::Error;
 use std::{
     borrow::Cow,
     fs::File,
@@ -10,6 +10,143 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use url::Url;
+use reqwest::Client;
+use std::io::{self, BufRead, BufReader, Write};
+
+// Function to rewrite the M3U8 file with local segment paths
+pub fn write_m3u8(content: &str, output_file: &str) -> io::Result<()> {
+    let reader = BufReader::new(content.as_bytes());
+    let mut output = File::create(output_file)?;
+
+    for line in reader.lines() {
+        let line = line?;
+        if line.starts_with("#") {
+            writeln!(output, "{}", line)?;
+        } else if line.trim().is_empty() {
+            writeln!(output)?;
+        } else {
+            let file_name = line.split('/').last().unwrap_or(&line);
+            writeln!(output, "{}", file_name)?;
+        }
+    }
+    Ok(())
+}
+
+// Function to download the M3U8 file and parse its segments
+pub async fn download_m3u8(url: &str) -> Result<(String, Vec<String>)> {
+    let client = Client::new();
+    let response = client.get(url).send().await?;
+    let content = response.text().await?;
+    println!("M3U8 Content:\n{}", content);
+
+    // Create base URL from M3U8 URL
+    let base_url = if url.ends_with(".m3u8") {
+        url.rsplitn(2, '/').nth(1).unwrap_or("")
+    } else {
+        url.rsplitn(2, '/').nth(0).unwrap_or("")
+    };
+
+    // Collect all segment URLs
+    let segments: Vec<String> = content
+        .lines()
+        .filter(|line| !line.starts_with("#") && !line.trim().is_empty())
+        .map(|line| {
+            let segment_url = if line.starts_with("http") {
+                line.to_string()
+            } else {
+                format!("{}/{}", base_url, line)
+            };
+            println!("Segment URL: {}", segment_url);
+            segment_url
+        })
+        .collect();
+
+    Ok((content, segments))
+}
+
+// Function to download an individual segment
+pub async fn download_segment(client: &Client, segment_url: &str) -> Result<Vec<u8>, Box<dyn Error + Send + Sync>> {
+    println!("Downloading segment: {}", segment_url);
+    for attempt in 0..5 {
+        let result = tokio::time::timeout(Duration::from_secs(15), client.get(segment_url).send()).await;
+        match result {
+            Ok(Ok(res)) => {
+                if res.status().is_success() {
+                    let bytes = res.bytes().await?;
+                    println!("DONE segment: {}", segment_url);
+                    return Ok(bytes.to_vec());
+                } else {
+                    eprintln!("Failed to download segment {}: HTTP {}", segment_url, res.status());
+                }
+            }
+            Ok(Err(err)) => {
+                eprintln!("Error downloading {}: {}", segment_url, err);
+            }
+            Err(_) => {
+                eprintln!("Timeout downloading segment {}", segment_url);
+            }
+        }
+
+        if attempt < 4 {
+            // Delay before retrying
+            println!("Retry download: {}", segment_url);
+            tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
+        }
+    }
+
+    Err(format!("Failed to download segment {} after 5 attempts", segment_url).into())
+}
+
+pub fn gen_html_no_poster() -> String {
+        format!(
+        r#"
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="robots" content="noindex">
+            <title>Live CDN</title>
+            <link href="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video-js.min.css" rel="stylesheet">
+        </head>
+        <body style="background:#000;color:#fff;">
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/video.js/8.3.0/video.min.js"></script>
+            <div class="video-container">
+                <video 
+                    id="my-player"
+                    class="video-js"
+                    muted 
+                    controls 
+                    preload="auto"
+                    data-setup='{}'
+                    style="position:fixed;right:0;bottom:0;min-width:100%;max-width:100%;min-height:100%;max-height:100%;object-fit:fill;"
+                >
+                    <source id="video-source" type="application/x-mpegURL"></source>
+                    <p class="vjs-no-js">
+                        To view this video please enable JavaScript, and consider upgrading to a
+                        web browser that
+                        <a href="https://videojs.com/html5-video-support/" target="_blank">
+                            supports HTML5 video
+                        </a>
+                    </p>
+                </video>
+            </div>
+            <script>
+                let url = window.location.href;
+                let hls_url = url.replace("/html", "/hls");
+                hls_url = url.replace(".html", ".m3u8");  
+                if (url){}
+                    document.getElementById('video-source').src = hls_url;
+                    let video = document.getElementById('my-player')
+                {} else {}
+                {}
+                const player = videojs('my-player');
+            </script>
+        </body>
+        </html>
+    "#,
+        "{}", "{", "}", "{", "}"
+    )
+}
 
 pub fn gen_html_hls() -> String {
     format!(

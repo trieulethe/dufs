@@ -5,7 +5,7 @@ use crate::http_utils::{body_full, IncomingStream, LengthLimitedStream};
 use crate::utils::{
     check_file_exist, create_html_file, decode_uri, encode_uri, gen_html_hls,
     get_file_mtime_and_mode, get_file_name, get_path_from_url, glob, parse_range,
-    try_get_file_name,
+    try_get_file_name, download_segment, download_m3u8, write_m3u8, gen_html_no_poster
 };
 use crate::Args;
 
@@ -505,23 +505,118 @@ impl Server {
     }
 
     async fn handle_get_video(&self, url: &str) -> Result<()> {
+        println!("url: {:?}", url);
         let new_dir = self.create_dir().await?;
         ensure_path_parent(new_dir.as_path()).await?;
-        let video_path = format!("{}/{}", new_dir.to_str().unwrap(), "%(title)s.%(ext)s");
-        let mut youtubedl = std::process::Command::new("youtube-dl");
-        youtubedl.arg("-o").arg(video_path);
-        youtubedl.arg("--write-thumbnail");
-        youtubedl.arg("--write-info-json");
-        youtubedl.arg(url);
-        youtubedl
-            .output()
-            .expect("Failed to execute ffmpeg_gen_hls");
-        let file_name = self.get_file_name(new_dir.to_str().unwrap())?;
-        let mp4_path = new_dir.join(file_name);
-        let mp4_new_path = self.cut_10s_video(&mp4_path, &new_dir);
-        self.generate_file(&mp4_new_path.as_path(), &new_dir);
+        if url.ends_with(".mp4") {
+            let video_path = format!("{}/{}", new_dir.to_str().unwrap(), "%(title)s.%(ext)s");
+            let mut youtubedl = std::process::Command::new("youtube-dl");
+            youtubedl.arg("-o").arg(video_path);
+            youtubedl.arg("--write-thumbnail");
+            youtubedl.arg("--write-info-json");
+            youtubedl.arg(url);
+            youtubedl
+                .output()
+                .expect("Failed to execute ffmpeg_gen_hls");
+            let file_name = self.get_file_name(new_dir.to_str().unwrap())?;
+            let mp4_path = new_dir.join(file_name);
+            let mp4_new_path = self.cut_10s_video(&mp4_path, &new_dir);
+            self.generate_file(&mp4_new_path.as_path(), &new_dir);
+        } else if url.ends_with(".m3u8") {
+            // let m3u8_url = "https://master3.baraq.xyz/media/6663ddab92303XDn/1080/hls/index.m3u8";
+            // let output_dir = "output_segments";
+            // let rewritten_m3u8_file = format!("{}/index.m3u8", output_dir); // Save rewritten M3U8 in output directory
+            let max_concurrent = 10; // Number of concurrent tasks
+
+            // Download M3U8 and get segments
+            let (m3u8_content, segments) = download_m3u8(url).await?;
+
+            // Download segments and save to output directory
+            self.download_segments(segments, new_dir.to_str().unwrap(), max_concurrent).await?;
+
+            let rewritten_m3u8_file = format!("{}/index.m3u8", new_dir.to_str().unwrap());
+            write_m3u8(&m3u8_content, &rewritten_m3u8_file)?;
+
+            let html_path = new_dir.join("index.html");
+            let html = gen_html_no_poster();
+            create_html_file(html_path.to_str().unwrap(), html.as_str());
+        }
         Ok(())
     }
+
+    // Function to download all segments concurrently
+    async fn download_segments(&self, segments: Vec<String>, output_dir: &str, max_concurrent: usize) -> Result<()> {
+        use reqwest::Client;
+        use std::fs::{self, File};
+        use std::io::Write;
+        use tokio::sync::Semaphore;
+        use tokio::time::Duration;
+
+        let client = Client::builder()
+            .timeout(Duration::from_secs(10))
+            .build()?;
+        let semaphore = Arc::new(Semaphore::new(max_concurrent)); // Limit the number of concurrent tasks
+        fs::create_dir_all(output_dir)?;
+
+        let mut tasks = Vec::new();
+
+        for segment_url in segments {
+            let client = client.clone();
+            let output_dir = output_dir.to_string();
+            let semaphore = Arc::clone(&semaphore);
+
+            let task = tokio::spawn(async move {
+                let _permit = semaphore.acquire().await.unwrap(); // Wait for a permit before proceeding
+                let segment_name = segment_url.split('/').last().unwrap_or("segment.ts");
+                let segment_path = Path::new(&output_dir).join(segment_name);
+
+                let mut file = File::create(&segment_path).unwrap();
+
+                match download_segment(&client, &segment_url).await {
+                    Ok(bytes) => {
+                        if let Err(e) = file.write_all(&bytes) {
+                            eprintln!("Failed to write segment {}: {}", segment_url, e);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to download segment {}: {}", segment_url, e);
+                    }
+                }
+
+                // Check if file is 0 KB and retry download if necessary
+                let metadata = fs::metadata(&segment_path).unwrap();
+                if metadata.len() == 0 {
+                    eprintln!("File {} is 0 KB, retrying download...", segment_path.display());
+                    for _ in 0..5 {
+                        match download_segment(&client, &segment_url).await {
+                            Ok(bytes) => {
+                                let mut file = File::create(&segment_path).unwrap();
+                                if let Err(e) = file.write_all(&bytes) {
+                                    eprintln!("Failed to write segment {}: {}", segment_url, e);
+                                }
+                                if fs::metadata(&segment_path).unwrap().len() > 0 {
+                                    break;
+                                }
+                            }
+                            Err(e) => {
+                                eprintln!("Retry failed to download segment {}: {}", segment_url, e);
+                            }
+                        }
+                        tokio::time::sleep(Duration::from_millis(500)).await;
+                    }
+                }
+            });
+
+            tasks.push(task);
+        }
+
+        for task in tasks {
+            task.await.unwrap();
+        }
+
+        Ok(())
+    }
+
 
     fn cut_10s_video(&self, mp4_path: &Path, new_dir: &Path) -> PathBuf {
         let output = new_dir.join("output.mp4");
