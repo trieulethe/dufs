@@ -674,7 +674,7 @@ impl Server {
     }
 
     async fn get_path_file_type(&self, path: &Path) -> Result<PathBuf> {
-        if path.extension().unwrap_or_default() == "mp4" {
+        if path.extension().unwrap_or_default() == "mp4" || path.extension().unwrap_or_default() == "ts"{
             let new_dir = self.create_dir().await?;
             let relative_path = new_dir.join(path.file_name().unwrap_or_default());
             Ok(relative_path)
@@ -728,6 +728,9 @@ impl Server {
         }
 
         if path.extension().unwrap_or_default() == "mp4" {
+            let parent = path.parent().unwrap_or(Path::new(""));
+            self.generate_file(path, parent);
+        } else if path.extension().unwrap_or_default() == "ts" {
             let parent = path.parent().unwrap_or(Path::new(""));
             self.generate_file(path, parent);
         }
