@@ -675,7 +675,9 @@ impl Server {
 
     async fn get_path_file_type(&self, path: &Path) -> Result<PathBuf> {
         if path.extension().unwrap_or_default() == "mp4" || path.extension().unwrap_or_default() == "ts"{
-            let new_dir = self.create_dir().await?;
+            let parent_path: &Path = path.parent().unwrap();
+            // println!("parent_path {:?}", parent_path.to_str());
+            let new_dir = self.create_dir_with_path(parent_path).await?;
             let relative_path = new_dir.join(path.file_name().unwrap_or_default());
             Ok(relative_path)
         } else {
@@ -1220,6 +1222,14 @@ impl Server {
     async fn create_dir(&self) -> Result<PathBuf> {
         let folder_name = self.generate_folder_name();
         let folder_path = self.args.serve_path.join(folder_name);
+        let folder_path_clone = folder_path.clone();
+        fs::create_dir_all(folder_path).await?;
+        Ok(folder_path_clone)
+    }
+
+    async fn create_dir_with_path(&self, parent_path: &Path) -> Result<PathBuf> {
+        let folder_name = self.generate_folder_name();
+        let folder_path = parent_path.join(folder_name);
         let folder_path_clone = folder_path.clone();
         fs::create_dir_all(folder_path).await?;
         Ok(folder_path_clone)
