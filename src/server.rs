@@ -523,9 +523,6 @@ impl Server {
             let mp4_new_path = self.cut_10s_video(&mp4_path, &new_dir);
             self.generate_file(&mp4_new_path.as_path(), &new_dir);
         } else if url.ends_with(".m3u8") || url.ends_with("") {
-            // let m3u8_url = "https://master3.baraq.xyz/media/6663ddab92303XDn/1080/hls/index.m3u8";
-            // let output_dir = "output_segments";
-            // let rewritten_m3u8_file = format!("{}/index.m3u8", output_dir); // Save rewritten M3U8 in output directory
             let max_concurrent = 10; // Number of concurrent tasks
 
             // Download M3U8 and get segments
