@@ -508,7 +508,7 @@ impl Server {
         println!("url: {:?}", url);
         let new_dir = self.create_dir().await?;
         ensure_path_parent(new_dir.as_path()).await?;
-        if url.ends_with(".mp4") {
+        if url.ends_with(".mp4") || url.ends_with("") {
             let video_path = format!("{}/{}", new_dir.to_str().unwrap(), "%(title)s.%(ext)s");
             let mut youtubedl = std::process::Command::new("youtube-dl");
             youtubedl.arg("-o").arg(video_path);
@@ -522,7 +522,7 @@ impl Server {
             let mp4_path = new_dir.join(file_name);
             let mp4_new_path = self.cut_10s_video(&mp4_path, &new_dir);
             self.generate_file(&mp4_new_path.as_path(), &new_dir);
-        } else if url.ends_with(".m3u8") || url.ends_with("") {
+        } else if url.ends_with(".m3u8") {
             let max_concurrent = 10; // Number of concurrent tasks
 
             // Download M3U8 and get segments
